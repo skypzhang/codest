@@ -1,0 +1,619 @@
+﻿安装搜狗
+cd /etc/yum.repos.d/
+curl -O http://mirrors.163.com/.help/CentOS7-Base-163.repo
+yum clean all
+yum mkdecache
+yum install alien -y
+yum install epel-release
+wget https://copr.fedoraproject.org/coprs/mosquito/myrepo/repo/epel-7/mosquito-myrepo-epel-7.repo
+yum -y  install fcitx*
+yum -y install libQtWebKit*
+yum -y install dpkg
+ar vx sogoupinyin_2.1.0.0086_amd64.deb
+tar -xvf data.tar.xz -C /
+cp /usr/lib/x86_64-linux-gnu/fcitx/fcitx-sogoupinyin.so /usr/lib64/fcitx/
+yum install -y im-chooser
+alternatives --config xinputrc  ==>5
+reboot
+____________________________________________________________________________________
+需要在第二行上加上#coding=gbk才能输出中文
+vim ~/.vimrc (~/.vimrc为vim配置文件)
+
+set fileencodings=utf-8,gb2312,gbk,gb18030  
+
+set termencoding=utf-8  
+
+set fileformats=unix  
+
+set encoding=prc 
+
+
+##################################################
+
+120-打造vim为python IDE
+mkdir -p ~/.vim/bundle/
+cd ~/.vim/bundle/
+git clone https://github.com/rkulla/pydiction.git
+cp -r pydiction/after/ ~/.vim/
+vim ~/.vimrc
+filetype plugin on
+let g:pydiction_location = '~/.vim/bundle/pydiction/complete-dict'
+set ai
+set et
+set ts=4
+##########################################################
+1.测试主机是否能ping通
+import threading
+import subprocess
+class ping:
+    def __call__(self,host):
+        result = subprocess.run(
+            'ping -c2 %s &> /dev/null ' % host ,shell = True
+        )
+        if result.returncode == 0:
+            print('%s:up' % host)
+        else:
+            print('%s:down' % host)
+
+if __name__ == '__main__':
+    ips = ['176.130.6.%s' %i for i in range(1,255)]
+    for ip in ips:
+        t = threading.Thread(target=ping(),args=(ip,))
+        t.start()
+#######################################################################
+2.测试主机是否能ping通
+import threading
+import subprocess
+class ping:
+    def __init__(self,host):
+        self.host = host
+    def __call__(self):
+        result = subprocess.run(
+            'ping -c2 %s &> /dev/null ' % self.host ,shell = True
+        )
+        if result.returncode == 0:
+            print('%s:up' % self.host)
+        else:
+            print('%s:down' % self.host)
+
+if __name__ == '__main__':
+    ips = ['176.130.6.%s' %i for i in range(1,255)]
+    for ip in ips:
+        t = threading.Thread(target=ping(ip))
+        t.start()
+#######################################################################
+3.0创建文件并将content里的内容写进去
+def wfile(fname, content):
+    '用于将内容写入文件'
+    with open(fname, 'w') as fobj:
+        fobj.writelines(content)
+________________________________________
+3.读文件写到文件里:
+import sys
+from urllib import request
+html = request.urlopen(url)
+ with open(fname, 'wb') as fobj:
+        while 1:
+            data = html.read(4096)
+            if not data:
+                break
+            fobj.write(data)
+
+if __name__ == '__main__':
+    download(sys.argv[1], sys.argv[2])
+###########################################################################
+4.下载小程序
+from urllib import request
+import sys
+def download(url,fname):
+    html = request.urlopen(url)
+    with open(fname,'wb') as fobj:
+        while 1:
+            data = html.read(4096)
+            if not data:
+                break
+            fobj.write(data)
+
+if __name__ == '__main__':
+    download(sys.argv[1], sys.argv[2])
+
+#############################################################################
+5.下载网易图片
+import wget
+import os
+import re
+
+def get_patt(fname,patt,charset='utf8'):
+    result = []
+    cpatt = re.compile(patt)
+    with open(fname,encoding=charset) as fobj:
+       for line in fobj:
+           m = cpatt.search(line)
+           if m:
+               result.append(m.group())
+    return result
+
+if __name__ == '__main__':
+    url = 'http://www.163.com'
+    down_dir = '/tmp/163'
+    fname = '/tmp/163/163.html'
+    img_patt = '(http|https)://[\w./-]+\.(jgp|jpeg|png|gif)'
+
+    if not os.path.exists(down_dir):
+        os.mkdir(down_dir)
+    if not os.path.exists(fname):
+        wget.download(url,fname)
+    img_list = get_patt(fname, img_patt,'gbk')
+    for img_url in img_list:
+        wget.download(img_url,down_dir)
+####################################################################
+6.统计日志
+import re
+
+class CountPatt:
+    def __init__(self, fname):
+        self.fname = fname
+
+    def count_patt(self, patt):
+        patt_dict = {}
+        cpatt = re.compile(patt)  # 为了更好的性能，将模式编译
+
+        # 在文件的每一行进行模式匹配
+        with open(self.fname) as fobj:
+            for line in fobj:
+                m = cpatt.search(line)
+                if m:  # 如果匹配到了内容
+                    key = m.group()
+                    patt_dict[key] = patt_dict.get(key, 0) + 1
+
+        return patt_dict
+
+if __name__ == '__main__':
+    fname = 'access_log'
+    ip = '^(\d+\.){3}\d+'  # 12345.67890.1.23  192.16.1.20
+    cp = CountPatt(fname)
+    result1 = cp.count_patt(ip)
+    print(result1)
+    br = 'Firefox|MSIE|Chrome'
+    result2 = cp.count_patt(br)
+    print(result2)
+######################################################################              
+7.网络发送邮件
+from email.mime.text import MIMEText
+from email.header import Header
+import smtplib
+import getpass
+def send_mail(text, sender, recievers, subject, server, passwd):
+    msg = MIMEText(text,'plain','utf8')
+    msg['From'] = Header(sender,'utf8')
+    msg['To'] = Header(recievers[0], 'utf8')
+    msg['Subject'] = Header(subject, 'utf8')
+    smtp = smtplib.SMTP()
+    smtp.connect(server)
+    smtp.login(sender, passwd)
+    #smtp.starttils()#如果服务器要求httpss时
+    smtp.sendmail(sender, recievers,msg.as_bytes())
+if __name__ == '__main__':
+    text = 'pyton发送邮件测试\n'
+    sender = '598712901@qq.com'
+    recievers = ['598712901@qq.com','skypzhang@163.com']
+    subject = 'py邮件测试'
+    server = 'smtp.qq.com'
+    passwd = getpass.getpass() #授权码
+    send_mail(text, sender, recievers, subject, server,passwd)
+#######################################################################
+8.python调用ansible执行命令
+import shutil
+from collections import namedtuple
+from ansible.parsing.dataloader import DataLoader
+from ansible.vars.manager import VariableManager
+from ansible.inventory.manager import InventoryManager
+from ansible.playbook.play import Play
+from ansible.executor.task_queue_manager import TaskQueueManager
+import ansible.constants as C
+def adboc(sources,hosts,module,args):
+    Options = namedtuple('Options',
+                         ['connection', 'module_path', 'forks', 'become', 'become_method', 'become_user', 'check', 'diff'])
+    options = Options(connection='smart', module_path=['/to/mymodules'], forks=10, become=None, become_method=None,
+                      become_user=None, check=False, diff=False)
+
+    loader = DataLoader()
+    passwords = dict(vault_pass='secret')
+
+    inventory = InventoryManager(loader=loader, sources=sources)
+
+    variable_manager = VariableManager(loader=loader, inventory=inventory)
+
+    play_source = dict(
+        name="Ansible Play",
+        hosts=hosts,
+        gather_facts='no',
+        tasks=[
+            dict(action=dict(module=module, args=args), register='shell_out'),
+            #dict(action=dict(module='debug', args=dict(msg='{{shell_out.stdout}}')))
+        ]
+    )
+
+    play = Play().load(play_source, variable_manager=variable_manager, loader=loader)
+
+    tqm = None
+    try:
+        tqm = TaskQueueManager(
+            inventory=inventory,
+            variable_manager=variable_manager,
+            loader=loader,
+            options=options,
+            passwords=passwords,
+        )
+        result = tqm.run(play)
+    finally:
+        if tqm is not None:
+            tqm.cleanup()
+
+        shutil.rmtree(C.DEFAULT_LOCAL_TMP, True)
+if __name__ == '__main__':
+    adboc(['hosts'],'dbservers','yum','name=vsftpd state=latest')
+###########################################################################
+9.python调用playbook
+from collections import namedtuple
+from ansible.parsing.dataloader import DataLoader
+from ansible.vars.manager import VariableManager
+from ansible.inventory.manager import InventoryManager
+from ansible.executor.playbook_executor import PlaybookExecutor
+
+
+def runpb(hosts_list, playbooks):
+    Options = namedtuple('Options',
+                         ['connection',
+                          'remote_user',
+                          'ask_sudo_pass',
+                          'verbosity',
+                          'ask_pass',
+                          'module_path',
+                          'forks',
+                          'become',
+                          'become_method',
+                          'become_user',
+                          'check',
+                          'listhosts',
+                          'listtasks',
+                          'listtags',
+                          'syntax',
+                          'sudo_user',
+                          'sudo',
+                          'diff'])
+    options = Options(connection='smart',
+                      remote_user='root',
+                      ask_pass=None,
+                      sudo_user=None,
+                      forks=5,
+                      sudo=None,
+                      ask_sudo_pass=False,
+                      verbosity=5,
+                      module_path=None,
+                      become=None,
+                      become_method=None,
+                      become_user=None,
+                      check=False,
+                      diff=False,
+                      listhosts=None,
+                      listtasks=None,
+                      listtags=None,
+                      syntax=None)
+    loader = DataLoader()
+    passwords = dict()
+    inventory = InventoryManager(loader=loader, sources=hosts_list)
+    variable_manager = VariableManager(loader=loader, inventory=inventory)
+    playbook = PlaybookExecutor(
+        playbooks=playbooks,
+        inventory=inventory,
+        variable_manager=variable_manager,
+        loader=loader,
+        options=options,
+        passwords=passwords
+    )
+    result = playbook.run()
+    return result
+
+
+if __name__ == '__main__':
+    print(runpb(['hosts'], playbooks=['server.yml']))#hosts和yml文件路径
+#################################################################
+10.自定义ansible模块(到远程主机上拷贝文件到它本机)
+#设置ansible查找模块的路径
+export ANSIBLE_LIBRARY=$(pwd)/mylib
+
+import shutil
+from ansible.module_utils.basic import AnsibleModule
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            source=dict(required=True, Type='str'),
+            dest=dict(required=True, tpye='str')
+        )
+    )
+    shutil.copy(module.params['source'],module.params['dest'])
+    module.exit_json(changed=True)
+if __name__ == '__main__':
+    main()
+#######################################################################
+11.生成md5值
+import hashlib
+import sys
+
+def check_md5(fname):
+    m = hashlib.md5()
+
+    with open(fname, 'rb') as fobj:
+        while 1:
+            data = fobj.read(4096)
+            if not data:
+                break
+            m.update(data)
+
+    return m.hexdigest()
+
+if __name__ == '__main__':
+    result = check_md5(sys.argv[1])
+    print(result)
+########################################################################
+11.jenkins为打包生成md5 shell
+##chown -R jenkins.jenkins /var/www/html/deploy##
+pkg_dir=/var/www/html/deploy/pkgs
+cp -r myweb-$webver $pkg_dir
+cd $pkg_dir
+rm -rf myweb-$webver/.git
+tar -czf myweb-$webver.tar.gz myweb-$webver
+rm -rf myweb-$webver
+md5sum myweb-$webver.tar.gz |  awk '{print $1}' > myweb-$webver.tar.gz.md5
+cd .. 
+[ -f live_ver ]  && cat live_ver > last_ver
+echo -n $webver > live_ver
+--------------------------------------------------------------------------------------------------------------------------------------
+12.自动部署上线
+import os
+import requests
+import wget
+import hashlib
+import tarfile
+
+def has_new_ver(ver_fname, ver_url):
+    '有新版本返回True，否则返回False'
+    # 本地没有版本文件，返回True
+    if not os.path.isfile(ver_fname):
+        return True
+
+    # 如果本地版本和网上版本不一样，则返回True
+    with open(ver_fname) as fobj:
+        local_ver = fobj.read()
+    r = requests.get(ver_url)
+    if local_ver != r.text:
+        return True
+    else:
+        return False
+
+def check_file(app_fname, md5_url):
+    '如果文件md5值与网上提供的值一致，返回True; 否则返回False'
+    # 计算本地文件的md5值
+    m = hashlib.md5()
+    with open(app_fname, 'rb') as fobj:
+        while 1:
+            data = fobj.read(4096)
+            if not data:
+                break
+            m.update(data)
+
+    # 取出网上的md5值
+    r = requests.get(md5_url)
+
+    # 比较，注意，网上的md5值文件，要去除结尾的\n
+    if m.hexdigest() == r.text.strip():
+        return True
+    else:
+        return False
+
+def deploy(app_fname, deploy_dir, dest):
+    '用于部署软件包'
+    # 解压缩
+    tar = tarfile.open(app_fname)
+    tar.extractall(path=deploy_dir)
+    tar.close()
+
+    # 拼接出解压目录的绝对路径
+    pkg_path = os.path.basename(app_fname)
+    pkg_path = pkg_path.replace('.tar.gz', '')
+    pkg_path = os.path.join(deploy_dir, pkg_path)
+
+    # 如果软链接文件已经存在了，先删除它
+    if os.path.exists(dest):
+        os.remove(dest)
+
+    # 创建软链接
+    os.symlink(pkg_path, dest)
+
+
+if __name__ == '__main__':
+    # 判断是否有新版本，没有则退出
+    ver_fname = '/var/www/deploy/live_ver'
+    ver_url = 'http://192.168.1.6/deploy/live_ver'
+    if not has_new_ver(ver_fname, ver_url):
+        print('没有发现新版本')
+        exit(1)
+
+    # 下载软件包
+    down_dir = '/var/www/download'
+    r = requests.get(ver_url)
+    app_url = 'http://192.168.1.6/deploy/pkgs/myweb-%s.tar.gz' % r.text
+    wget.download(app_url, down_dir)
+
+    # 校验软件包是否损坏，如损坏则删除它并退出
+    app_fname = app_url.split('/')[-1]
+    app_fname = os.path.join(down_dir, app_fname)
+    md5_url = app_url + '.md5'
+    if not check_file(app_fname, md5_url):
+        print('文件已损坏')
+        os.remove(app_fname)
+        exit(2)
+
+    # 部署软件包
+    deploy_dir = '/var/www/deploy'
+    dest = '/var/www/html/nsd1908'
+    deploy(app_fname, deploy_dir, dest)
+
+    # 更新本地版本文件
+    if os.path.exists(ver_fname):
+        os.remove(ver_fname)
+    wget.download(ver_url, ver_fname)
+
+##############################################################################
+12.数据备份
+import os
+import tarfile
+import hashlib
+import pickle
+from time import strftime
+
+def check_md5(fname):
+    m = hashlib.md5()
+
+    with open(fname, 'rb') as fobj:
+        while 1:
+            data = fobj.read(4096)
+            if not data:
+                break
+            m.update(data)
+
+    return m.hexdigest()
+
+
+def full_backup(src, dst, md5file):
+    # 拼接出备份文件的绝对路径
+    fname = os.path.basename(src)  # security
+    fname = '%s_full_%s.tar.gz' % (fname, strftime('%Y%m%d'))
+    fname = os.path.join(dst, fname)
+
+    # 压缩
+    tar = tarfile.open(fname, 'w:gz')
+    tar.add(src)
+    tar.close()
+
+    # 计算每个文件的md5值，将其保存到字典
+    md5dict = {}
+    for path, folders, files in os.walk(src):
+        for file in files:
+            key = os.path.join(path, file)
+            md5dict[key] = check_md5(key)
+
+    # 将字典存入文件
+    with open(md5file, 'wb') as fobj:
+        pickle.dump(md5dict, fobj)
+
+
+def incr_backup(src, dst, md5file):
+    # 拼接出备份文件的绝对路径
+    fname = os.path.basename(src)  # security
+    fname = '%s_incr_%s.tar.gz' % (fname, strftime('%Y%m%d'))
+    fname = os.path.join(dst, fname)
+
+    # 计算每个文件的md5值，将其保存到字典
+    md5dict = {}
+    for path, folders, files in os.walk(src):
+        for file in files:
+            key = os.path.join(path, file)
+            md5dict[key] = check_md5(key)
+
+    # 取出前一天的md5值
+    with open(md5file, 'rb') as fobj:
+        old_md5 = pickle.load(fobj)
+
+    # 比较两个字典，新字典的key不在老字典中，或值不一样，都要备份
+    tar = tarfile.open(fname, 'w:gz')
+    for key in md5dict:
+        if old_md5.get(key) != md5dict[key]:
+            tar.add(key)
+    tar.close()
+
+    # 使用今天的md5值更新md5文件，以便于明天与今天比较
+    with open(md5file, 'wb') as fobj:
+        pickle.dump(md5dict, fobj)
+
+if __name__ == '__main__':
+    src = '/tmp/nsd1908/security'
+    dst = '/tmp/nsd1908/backup'
+    md5file = '/tmp/nsd1908/md5.data'
+    if strftime('%a') == 'Mon':
+        full_backup(src, dst, md5file)
+    else:
+        incr_backup(src, dst, md5file)
+
+
+# (nsd1908) [root@room8pc16 day03]# cp -r /etc/security /tmp/nsd1908/
+# 将security目录备份到backup目录
+# (nsd1908) [root@room8pc16 day03]# ls /tmp/nsd1908/
+# backup  security
+#################################################################################
+13.1监控web服务状态
+import time
+import requests
+import os
+def check_web(result):
+    if result not in [200, 301, 302]:
+        # if result != 1:
+        return False
+    else:
+        return True
+if __name__ == '__main__':
+    url = 'http://www.baidu.com'
+    try:
+        while 1:
+            if not check_web(result):
+                break
+            time.sleep(3)
+            os.system('clear')
+            print('web服务正常')
+    except:
+        print('web服务不正常')
+---------------------------------------------------------------------------------------------------------------------------------------
+13.2监控web服务状态
+import time
+import os
+def check_web(result):
+    if result != 1:
+        return False
+    else:
+        return True
+if __name__ == '__main__':
+    while 1:
+        cmd = 'nmap baidu.com -p 80 | grep open | wc -l'
+        result = os.popen(cmd)
+        result = int(result.read().strip())
+        if not check_web(result):
+            print('web服务不正常')
+            break
+        time.sleep(3)
+        os.system('clear')
+        print('web服务正常')
+#################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
